@@ -1,160 +1,135 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { withStyles } from '@material-ui/core/styles';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItemAvatar from '@material-ui/core/ListItemAvatar';
+import Avatar from '@material-ui/core/Avatar';
+import Typography from '@material-ui/core/Typography';
+import CardActions from '@material-ui/core/CardActions';
+import IconButton from '@material-ui/core/IconButton';
+import Grid from '@material-ui/core/Grid';
+import BorderColor from '@material-ui/icons/BorderColor';
+import DeleteIcon from '@material-ui/icons/Delete';
+import ThumbUpAlt from '@material-ui/icons/ThumbUpAlt';
+import ThumbDownAlt from '@material-ui/icons/ThumbDownAlt';
+import Badge from '@material-ui/core/Badge';
+import Star from '@material-ui/icons/Star';
 
-import { withRouter } from "react-router-dom";
+import { timestampToDate } from '../helpers/timestampToDate';
+import { getFisrtChar } from '../helpers/strings';
 
-import { connect } from "react-redux";
-import * as actions from "../actions";
+import EditComment from './EditComment';
 
-import timeago from "timeago.js";
-import Modal from "react-modal";
-
-import APIHelper from "../utils/api-helper";
-import Score from "./score";
-import EditButtons from "./edit-buttons";
-import CommentForm from "../forms/comment-form";
+const EDIT_COMMENT = 'EDIT_COMMENT';
+const SHOW_COMMENT = 'SHOW_COMMENT';
 
 class Comment extends Component {
-	static propTypes = {
-		comment: PropTypes.object.isRequired
-	};
+  state = {
+    scene: SHOW_COMMENT
+  }
 
-	initialState = {
-		isModalOpen: false
-	};
+  toggleScene = (scene) => {
+    this.setState({
+      scene: scene
+    });
+  }
 
-	constructor(props) {
-		super(props);
-		this.state = this.initialState;
-	}
+  onEditComment = (updatedComment) => {
+    const { postId, comment, editComment, fetchComments } = this.props
+    const _AUTHOR = 'anonymous';
+    const values = {
+      body: updatedComment,
+      author: _AUTHOR
+    }
+    editComment(comment.id, values, () => {
+      fetchComments(postId);
+      this.setState({
+        scene: SHOW_COMMENT
+      });
+    });
+  }
 
-	upvoteComment() {
-		const comment_id = this.props.comment.id;
-		APIHelper.upvoteComment(comment_id).then(comment => {
-			this.props.upvoteComment({
-				type: actions.UPVOTE_COMMENT,
-				comment_id
-			});
-		});
-	}
+  renderComment() {
+    const { classes, comment, voteForComment, onDeleted } = this.props;
 
-	downvoteComment() {
-		const comment_id = this.props.comment.id;
-		APIHelper.downvoteComment(comment_id).then(comment => {
-			this.props.downvoteComment({
-				type: actions.DOWNVOTE_COMMENT,
-				comment_id
-			});
-		});
-	}
+    if (this.state.scene === SHOW_COMMENT) {
+      return (
+        <ListItem alignItems="flex-start">
+          <ListItemAvatar>
+            <Avatar className={classes.avatar}>{getFisrtChar(comment.author)}</Avatar>
+          </ListItemAvatar>
+          <ListItemText
+            primary={comment.author}
+            secondary={
+              <React.Fragment>
+                <Typography component="span" className={classes.inline} color="textPrimary">
+                  {timestampToDate(comment.timestamp)}
+                </Typography>
+                {` — ${comment.body}`}
+              </React.Fragment>
+            }
+          />
+          <CardActions className={classes.actions} disableActionSpacing>
 
-	deleteComment() {
-		if (window.confirm("Delete Comment?")) {
-			const comment_id = this.props.comment.id;
-			APIHelper.deleteComment(comment_id).then(() => {
-				this.props.deleteComment({
-					type: actions.DELETE_COMMENT,
-					comment_id
-				});
-			});
-		}
-	}
+            <IconButton aria-label="Vote Score">
+              <Badge badgeContent={comment.voteScore ? comment.voteScore : 0} color="primary" classes={{ badge: classes.badge }}>
+                <Star />
+              </Badge>
+            </IconButton>
 
-	editComment() {
-		this.openModel();
-	}
+            <IconButton aria-label="Up Vote" onClick={() => voteForComment(comment.id, 'upVote')}>
+              <ThumbUpAlt />
+            </IconButton>
 
-	openModel() {
-		this.setState({ isModalOpen: true });
-	}
+            <IconButton aria-label="Down Vote" onClick={() => voteForComment(comment.id, 'downVote')}>
+              <ThumbDownAlt />
+            </IconButton>
 
-	closeModal() {
-		this.setState({ isModalOpen: false });
-	}
+            {/*<Link to={`/${postCategory}/${comment.parentId}/comments/edit/${comment.id}`}>*/}
+              <IconButton aria-label="Edit Comment" onClick={() => this.toggleScene(EDIT_COMMENT)}>
+                <Grid item xs={8}>
+                  <BorderColor />
+                </Grid>
+              </IconButton>
+            {/*</Link>*/}
 
-	generateModal(comment) {
-		const { isModalOpen } = this.state;
-		const modalStyle = {
-			content: {
-				top: "10%",
-				left: "10%",
-				right: "10%",
-				bottom: "auto"
-			}
-		};
+            <IconButton aria-label="Delete Comment" onClick={() => onDeleted(comment.id)}>
+              <Grid item xs={8}>
+                <DeleteIcon />
+              </Grid>
+            </IconButton>
 
-		return (
-			<Modal
-				style={modalStyle}
-				isOpen={isModalOpen}
-				onAfterOpen={() => {}}
-				onRequestClose={() => {}}
-				closeTimeoutMS={0}
-				shouldCloseOnOverlayClick={true}
-				contentLabel="Edit Comment"
-			>
-				<h1>Edit Comment Here</h1>
-				<CommentForm
-					originalComment={comment}
-					parent_id={comment.parentId}
-					onSubmit={() => {
-						this.closeModal();
-					}}
-					onCancel={() => {
-						this.closeModal();
-					}}
-				/>
-			</Modal>
-		);
-	}
+          </CardActions>
+        </ListItem>
+      );
+    } else {
+      return (
+        <EditComment
+          comment={comment.body}
+          onEditComment={this.onEditComment}
+        />
+      );
+    }
+  }
 
-	render() {
-		const { comment } = this.props;
-		const date = timeago().format(comment.timestamp);
-
-		return (
-			<div>
-				<h3>{comment.body}</h3>
-				<p>
-					{date} | by {comment.author}
-				</p>
-				<Score
-					score={comment.voteScore}
-					onUpvote={() => {
-						this.upvoteComment();
-					}}
-					onDownvote={() => {
-						this.downvoteComment();
-					}}
-				/>
-				<EditButtons
-					onEdit={() => {
-						this.editComment();
-					}}
-					onDelete={() => {
-						this.deleteComment();
-					}}
-				/>
-				{this.generateModal(comment)}
-				<hr />
-			</div>
-		);
-	}
+  render() {
+    return (
+      this.renderComment()
+    );
+  }
 }
 
-function mapStateToProps({ comments }) {
-	return { comments };
-}
+const styles = theme => ({
+  avatar: {
+    margin: 10,
+    color: 'white',
+    backgroundColor: '#673ab7',
+  },
+});
 
-function mapDispatchToProps(dispatch) {
-	return {
-		upvoteComment: comment_id => dispatch(actions.upvoteComment(comment_id)),
-		downvoteComment: comment_id =>
-			dispatch(actions.downvoteComment(comment_id)),
-		deleteComment: comment_id => dispatch(actions.deleteComment(comment_id))
-	};
-}
+Comment.propTypes = {
+  classes: PropTypes.object.isRequired,
+};
 
-export default withRouter(
-	connect(mapStateToProps, mapDispatchToProps)(Comment)
-);
+export default withStyles(styles)(Comment);

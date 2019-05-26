@@ -16,6 +16,7 @@ const reduxDevTools = window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVT
 const store = createStore(rootReducer, reduxDevTools)
 
 ReactDOM.render(
+  
   <Provider store={store}>
     <BrowserRouter>
       <App/>
@@ -23,3 +24,4 @@ ReactDOM.render(
   </Provider>, document.getElementById('root'));
 
 registerServiceWorker();
+

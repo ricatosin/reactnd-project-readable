@@ -1,26 +1,66 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, {Component} from 'react';
+
+import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+import {Switch, Route, withRouter} from 'react-router-dom';
+
+import NavigationBar from './components/navigation-bar';
+import PostsPage from './pages/posts-page';
+import CategoryPage from './pages/category-page';
+import PostDetailsPage from './pages/post-details-page';
+import NotFound from './components/NotFound';
+
+import {connect} from 'react-redux';
+
+import APIHelper from './utils/api-helper';
+import * as actions from './actions';
+
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.fetchPosts();
+    this.fetchCategories();
+  }
+
+  fetchPosts() {
+    APIHelper.fetchPosts().then(posts => {
+      this.props.loadPosts({type: actions.LOAD_POSTS, posts});
+    });
+  }
+
+  fetchCategories() {
+    APIHelper.fetchCategories().then(categories => {
+      this.props.loadCategories({type: actions.LOAD_CATEGORIES, categories});
+    });
+  }
+/* Render Route Path */
+  render() {
+    return (
+      <div className="App">
+        <NavigationBar/>
+        <div className='container'>
+          <Switch>
+            <Route exact path='/' component={PostsPage}/>
+            <Route exact path='/:category_name' component={CategoryPage}/>
+            <Route exact path='/:category_name/:post_id' component={PostDetailsPage}/>
+            <Route exact path="*" component={NotFound} />
+          </Switch>
+        </div>
+      </div>
+    );
+  }
 }
 
-export default App;
+const mapStateToProps = (state) => {
+return {...state}
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    loadPosts: (posts) => dispatch(actions.loadPosts(posts)),
+    loadCategories: (categories) => dispatch(actions.loadCategories(categories))
+  }
+}
+
+export default withRouter(connect( mapStateToProps, mapDispatchToProps)(App));

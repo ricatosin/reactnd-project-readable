@@ -1,33 +1,39 @@
-.App {
+ol {
+  list-style: none;
+  padding-left: 0;
+}
+
+.score-label {
+  cursor: auto;
+  border: 1px solid #ccc;
+  font-weight: bold;
   text-align: center;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
-  pointer-events: none;
+.score-label:active,
+.score-label:focus,
+.score-label.active {
+  background-image: none;
+  outline: 0;
+  -webkit-box-shadow: none;
+          box-shadow: none;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.scoreButtons {
+  margin-right: 10px;
 }
 
-.App-link {
-  color: #61dafb;
+.addCommentContainer,
+.addPostContainer {
+  background-color: #F8F8F8;
+  padding: 40px;
+  border-radius: 10px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.sortButtons {
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+select#postCategory{
+  padding: 3px 12px;
 }

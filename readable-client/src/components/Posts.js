@@ -1,143 +1,127 @@
-import React, {Component} from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
+import { withStyles } from '@material-ui/core/styles';
+import { Link, withRouter } from 'react-router-dom'
+import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
+import IconButton from '@material-ui/core/IconButton';
+import Typography from '@material-ui/core/Typography';
+import Comment from '@material-ui/icons/Comment';
+import Star from '@material-ui/icons/Star';
+import ThumbUpAlt from '@material-ui/icons/ThumbUpAlt';
+import ThumbDownAlt from '@material-ui/icons/ThumbDownAlt';
+import Badge from '@material-ui/core/Badge';
+import Grid from '@material-ui/core/Grid';
+import DeleteIcon from '@material-ui/icons/Delete';
+import BorderColor from '@material-ui/icons/BorderColor';
 
-import {Link, withRouter} from 'react-router-dom';
+import { timestampToDate } from '../helpers/timestampToDate';
+import { capitalize } from '../helpers/capitalize';
 
-import {connect} from 'react-redux';
-import * as actions from '../actions';
+class Post extends React.Component {
 
-import timeago from 'timeago.js';
-import Modal from 'react-modal';
+  state = { _commentCount: 0 }
 
-import APIHelper from '../utils/api-helper';
-import Score from './score';
-import EditButtons from './edit-buttons';
-import PostForm from '../forms/post-form';
-
-class Post extends Component {
-  static propTypes = {
-    post: PropTypes.object.isRequired,
-    is_detail: PropTypes.bool,
+  componentWillMount() {
+    const { post } = this.props;
+    this.props.fetchCommentsCount(post.id, (data) => { this.setState({ _commentCount: data.amount }); });
   }
 
-  initialState = {
-    isModalOpen: false,
-  };
-
-  constructor (props) {
-    super(props);
-    this.state = this.initialState;
-  }
-
-  upvotePost() {
-    const post_id = this.props.post.id
-    APIHelper.upvotePost(post_id).then(post => {
-      this.props.upvotePost({
-        type: actions.UPVOTE_POST,
-        post_id
-      });
-    });
-  }
-
-  downvotePost() {
-    const post_id = this.props.post.id
-    APIHelper.downvotePost(post_id).then(() => {
-      this.props.downvotePost({
-        type: actions.DOWNVOTE_POST,
-        post_id
-      });
-    });
-  }
-
-deletePost() {
-  if(window.confirm('You really want to delete this post?')) {
-    const post_id = this.props.post.id
-    APIHelper.deletePost(post_id).then(() => {
-      this.props.deletePost ({
-        type: actions.DELETE_POST,
-        post_id
-      });
-      this.props.history.push('/');
-    });
-   };
-  }
-
-  editPost() {
-    this.openModel();
-  }
-
-  openModel() {
-    this.setState({isModalOpen: true})
-  }
-
-  closeModal() {
-    this.setState({isModalOpen: false})
-  }
-
-  generateModal(post) {
-    const {isModalOpen} = this.state;
-    const modalStyle = {
-      content: {
-        top: '10%',
-        left: '10%',
-        right: '10%',
-        bottom: 'auto',
-      }
-    };
-    return (
-        <Modal
-          style={modalStyle}
-          isOpen={isModalOpen}
-          onAfterOpen={() => {}}
-          onRequestClose={() => {}}
-          closeTimeoutMS={0}
-          shouldCloseOnOverlayClick={true}
-          contentLabel="Edit Post">
-          <h2>Edit your Post</h2>
-          <PostForm originalPost={post} onSubmit={() => {this.closeModal()}} onCancel={() => {this.closeModal()}}/>
-        </Modal>
-      )
-    }
-
-    generateTitle(post, is_detail) {
-      if (is_detail) {
-        return <h1>{post.title}</h1>;
-      } else {
-        return <Link to={`/${post.category}/${post.id}`} ><h2>{post.title}</h2></Link>;
-      }
-    }
-
-    generateEditButtons(is_detail) {
-        return <EditButtons onEdit={() =>{this.editPost()}} onDelete={() => {this.deletePost()}}/>;
-    }
   render() {
-    const {post} = this.props
-    const date = timeago().format(post.timestamp);
-    const {is_detail} = this.props;
+    const { classes, post, onDeletePost, commentCount, voteForPost,
+      match: { params: { id } } } = this.props;
+    // const { id } = this.props.match.params;
 
     return (
-         <div>
-           {this.generateTitle(post, is_detail)}
-           <p>{date} | by {post.author} | in <Link to={`/${post.category}`}>{post.category}</Link> | {post.commentCount} comment{post.commentCount > 1 ? 's' : ''}</p>
-           <p>{post.body}</p>
-           <Score score={post.voteScore} onUpvote={() => {this.upvotePost()}} onDownvote={() => {this.downvotePost()}} />
-           {this.generateEditButtons(is_detail)}
-           {this.generateModal(post)}
-           <hr/>
-         </div>
-       );
-     };
-   }
+      <Card className={classes.card}>
+        <CardHeader
+          title={id ? `${post.title}` : <Link to={`${post.category}/${post.id}`} style={{ textDecoration: 'none', color: '#000' }}>{post.title}</Link>}
+          subheader={`Posted by ${post.author} - ${timestampToDate(post.timestamp)}`}
+        />
 
-function mapStateToProps ({ posts}) {
-  return {posts}
-}
-function mapDispatchToProps (dispatch) {
-  return {
-    upvotePost: (post_id) => dispatch(actions.upvotePost(post_id)),
-    downvotePost: (post_id) => dispatch(actions.downvotePost(post_id)),
-    deletePost: (post_id) => dispatch(actions.deletePost(post_id)),
+        { post.body.length > 0 &&(
+          <CardContent>
+            <Typography component="p">
+              <b>{`( ${capitalize(post.category)} )`}</b> {post.body}
+            </Typography>
+          </CardContent>
+        )}
+
+        <CardActions className={classes.actions} disableActionSpacing>
+          <IconButton aria-label="Vote Score">
+            <Badge badgeContent={post.voteScore} color="primary" classes={{ badge: classes.badge }}>
+              <Star />
+            </Badge>
+          </IconButton>
+
+          <IconButton
+            component={Link} to={`/${post.category}/${post.id}`}
+            aria-label="Comment Count">
+            <Badge badgeContent={commentCount ? commentCount : this.state._commentCount} color="primary" classes={{ badge: classes.badge }}>
+              <Comment />
+            </Badge>
+          </IconButton>
+
+          <IconButton aria-label="Up Vote" onClick={() => voteForPost(post.id, 'upVote') }>
+            <ThumbUpAlt />
+          </IconButton>
+
+          <IconButton aria-label="Down Vote" onClick={() => voteForPost(post.id, 'downVote')}>
+            <ThumbDownAlt />
+          </IconButton>
+
+          {/* editButtons */}
+          <Grid className={classes.actionsRight}>
+            <IconButton
+              aria-label="Edit Post"
+              component={Link} to={`/${post.category}/edit/${post.id}`}
+              style={{ backgroundColor: 'transparent' }}
+            >
+                <Grid item xs={8}>
+                  <BorderColor className={classes.icon} />
+                </Grid>
+            </IconButton>
+
+            <IconButton
+              aria-label="Delete Post"
+              onClick={() =>
+                onDeletePost(post.id, () => { this.props.history.push('/') } )}
+              style={{ backgroundColor: 'transparent' }}
+            >
+                <Grid item xs={8}>
+                  <DeleteIcon className={classes.icon} />
+                </Grid>
+            </IconButton>
+          </Grid>
+        </CardActions>
+
+      </Card>
+    );
   }
 }
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Post))
+const styles = theme => ({
+  card: {
+    maxWidth: '100%',
+    backgroundColor: '#fff7e6'
+  },
+  actions: {
+    display: 'flex',
+  },
+  actionsRight: {
+    marginLeft: 'auto',
+  },
+  icon: {
+    margin: theme.spacing.unit,
+    fontSize: 25,
+  },
+});
+
+Post.propTypes = {
+  classes: PropTypes.object.isRequired,
+  post: PropTypes.object.isRequired
+};
+
+export default withRouter(withStyles(styles)(Post));

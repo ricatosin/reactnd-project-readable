@@ -38,7 +38,7 @@ const renderField = ({
     </Col>
     </FormGroup>
   </div>
-
+  
 const renderSelect = ({
   input,
   label,
@@ -63,7 +63,6 @@ const renderSelect = ({
     </FormGroup>
   </div>)
 }
-
 let PostForm = props => {
   const { handleSubmit, pristine, reset, submitting, categories } = props
   
@@ -116,23 +115,20 @@ let PostForm = props => {
   )
 }
 
-
 function mapStateToProps ({posts, categories}) {
   return {
     categories: categories.categories,
   }
 }
 
-
 PostForm = connect(
   mapStateToProps,
   undefined
 )(PostForm)
 
-
 export default reduxForm({
-  form: 'post', // a unique identifier for this form
-  validate, // <--- validation function given to redux-form
-  enableReinitialize: true,  //warn // <--- warning function given to redux-form
+  form: 'post',
+  validate, 
+  enableReinitialize: true,  
 })(PostForm)
 

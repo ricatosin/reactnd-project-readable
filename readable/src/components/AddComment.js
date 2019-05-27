@@ -6,11 +6,6 @@ import { postComment } from '../actions'
 
 class AddComment extends React.Component {
   submit = (values, context) => {
-    //  **id** - Any unique ID. As with posts, UUID is probably the best here. 
-    //  **timestamp** - [Timestamp] Get this however you want. 
-    //  **body** - [String] 
-    //  **author** - [String] 
-    //  **parentId** - Should match a post id in the database. |
     values.id = uuidv1()
     values.timestamp = Date.now()
     values.parentId = this.props.parentId

@@ -76,7 +76,6 @@ let CommentForm = props => {
   )
 }
 
-
 export default reduxForm({
   form: 'comment', // a unique identifier for this form
   validate, // <--- validation function given to redux-form
